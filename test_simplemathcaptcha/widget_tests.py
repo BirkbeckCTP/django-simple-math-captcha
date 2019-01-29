@@ -49,19 +49,12 @@ class WidgetTests(TestCase):
         self.assertEqual(w.decompress(''), expected)
         self.assertEqual(w.decompress('something'), expected)
 
-    # format output tests
-    def test_format_output(self):
-        w = MathCaptchaWidget()
-        w.question_html = 'abc'
-        result = w.format_output(['def', 'hij'])
-        self.assertEqual(result, 'abcdefhij')
-
     # render tests
     def test_render(self):
         w = MathCaptchaWidget()
         with mock.patch.object(w, 'generate_captcha') as mock_generate_captcha:
             mock_generate_captcha.return_value = 'hashed_answer'
-            w.question_html = 'question_html'
+            w.widgets[0].question_html = 'question_html'
             result = w.render('foo', None)
             self.assertHTMLEqual(result, """
             question_html
@@ -89,7 +82,7 @@ class WidgetTests(TestCase):
         self.assertEqual(mock_hash_answer.call_count, 1)
         self.assertEqual(mock_get_numbers.call_count, 1)
         self.assertEqual(mock_get_operator.call_count, 1)
-        self.assertHTMLEqual(w.question_html, """
+        self.assertHTMLEqual(w.widgets[0].question_html, """
             <span class="captcha-question">
                 What is 1 + 3?
             </span>""")
@@ -98,7 +91,7 @@ class WidgetTests(TestCase):
     def test_set_question(self):
         w = MathCaptchaWidget()
         w.set_question(2, 4, 'foo')
-        self.assertHTMLEqual(w.question_html, """
+        self.assertHTMLEqual(w.widgets[0].question_html, """
             <span class="captcha-question">
                 What is 2 foo 4?
             </span>""")
@@ -106,7 +99,7 @@ class WidgetTests(TestCase):
     def test_set_question_converts_multiplication_operator_to_entity(self):
         w = MathCaptchaWidget()
         w.set_question(2, 4, '*')
-        self.assertHTMLEqual(w.question_html, """
+        self.assertHTMLEqual(w.widgets[0].question_html, """
             <span class="captcha-question">
                 What is 2 &times; 4?
             </span>""")
@@ -114,7 +107,7 @@ class WidgetTests(TestCase):
     def test_set_question_used_question_class(self):
         w = MathCaptchaWidget(question_class='question')
         w.set_question(2, 4, '+')
-        self.assertHTMLEqual(w.question_html, """
+        self.assertHTMLEqual(w.widgets[0].question_html, """
             <span class="question">
                 What is 2 + 4?
             </span>""")
