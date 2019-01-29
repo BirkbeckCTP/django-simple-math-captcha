@@ -7,21 +7,32 @@ from django.utils.translation import ugettext_lazy as _
 
 from .utils import hash_answer, get_operator, get_numbers, calculate
 
+class MathCaptchaTextInputWidget(forms.TextInput):
+    template_name = "simplemathcaptcha/input.html"
+
+    def __init__(self, *args, **kwargs):
+        super(MathCaptchaTextInputWidget, self).__init__(*args, **kwargs)
+        self.question_html = None
+
+    def get_context(self, name, value, attrs):
+        context = super(MathCaptchaTextInputWidget, self).get_context(name, value, attrs)
+        context["widget"]["question_html"] = self.question_html
+        return context
 
 class MathCaptchaWidget(forms.MultiWidget):
+    TEXT_INPUT_WIDGET = MathCaptchaTextInputWidget
+
     def __init__(self, start_int=1, end_int=10, question_tmpl=None,
                  question_class=None, attrs=None):
         self.start_int, self.end_int = self.verify_numbers(start_int, end_int)
         self.question_class = question_class or 'captcha-question'
         self.question_tmpl = (
             question_tmpl or _('What is %(num1)i %(operator)s %(num2)i? '))
-        self.question_html = None
         widget_attrs = {'size': '5'}
         widget_attrs.update(attrs or {})
         widgets = (
             # this is the answer input field
-            forms.TextInput(attrs=widget_attrs),
-
+            self.TEXT_INPUT_WIDGET(attrs=widget_attrs),
             # this is the hashed answer field to compare to
             forms.HiddenInput()
         )
@@ -67,7 +78,7 @@ class MathCaptchaWidget(forms.MultiWidget):
         }
 
         html = '<span class="%s">%s</span>' % (self.question_class, question)
-        self.question_html = mark_safe(html)
+        self.widgets[0].question_html = mark_safe(html)
 
     def verify_numbers(self, start_int, end_int):
         start_int, end_int = int(start_int), int(end_int)
